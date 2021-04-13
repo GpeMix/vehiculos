@@ -1,0 +1,122 @@
+plugins {
+	id 'org.springframework.boot' version '2.4.4'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+	id 'checkstyle'
+	id 'jacoco'
+	id "org.sonarqube" version "3.0"
+}
+
+group = 'com.example'
+
+apply from: "${rootDir}/jacoco.gradle"
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+	mavenCentral()
+	maven { url 'https://repo.spring.io/milestone' }
+	maven { url 'https://repo.spring.io/snapshot' }
+}
+
+ext {
+    minCoverageRates = [
+        'instruction': 95,
+        'branch'     : 95,
+        'line'       : 95,
+        'complexity' : 95,
+        'method'     : 95,
+        'class'      : 95
+    ]
+    
+     coverageExclusions = ['**/config/**', '**/model/**', '**/demo/**']
+
+    
+}
+
+dependencies {
+	 implementation 'org.springframework.boot:spring-boot-starter-actuator:2.4.4'
+    //implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'org.springframework.boot:spring-boot-starter-web:2.4.4'
+    implementation 'org.springframework.boot:spring-boot-devtools:2.4.4'
+    implementation 'org.springframework.boot:spring-boot-starter-web-services:2.4.4'
+	
+	implementation 'commons-lang:commons-lang:2.6'
+    compileOnly 'org.apache.httpcomponents:httpclient:4.5'
+    compileOnly 'javax.ws.rs:javax.ws.rs-api:2.1.1'
+    //implementation 'org.slf4j:slf4j-log4j12:1.7.30'
+    //
+    compileOnly 'joda-time:joda-time:2.9.9'
+    implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
+	
+	implementation 'io.springfox:springfox-swagger2:2.9.2'
+    implementation 'io.springfox:springfox-swagger-ui:2.9.2'
+	
+	compileOnly 'org.projectlombok:lombok:1.18.10'
+    annotationProcessor 'org.projectlombok:lombok:1.18.10'
+
+    testCompileOnly 'org.projectlombok:lombok:1.18.10'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.10'
+	
+	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+        exclude group: 'org.junit.jupiter', module: 'junit-jupiter-api'
+        exclude group: 'org.junit.jupiter', module: 'junit-jupiter-engine'
+    }
+
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.6.0'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.6.0'
+    testImplementation group: 'org.junit.platform', name: 'junit-platform-engine', version: '1.6.0'
+    
+    compileOnly group: 'org.springframework.cloud', name: 'spring-cloud-starter-openfeign', version: '3.0.2'
+
+    testImplementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.sun.xml.bind:jaxb-impl:2.3.2'
+    implementation 'com.sun.xml.bind:jaxb-core:2.3.0.1'
+    implementation 'javax.xml.bind:jaxb-api:2.3.1'
+}
+
+checkstyle {
+        sourceSets = [project.sourceSets.main]
+		toolVersion = '8.1'
+        configFile = new File(rootDir, 'config/checkstyle/checkstyle.xml')
+        System.setProperty('checkstyle.cache.file', String.format('%s/%s',buildDir, 'checkstyle.cachefile'))
+        checkstyleMain.exclude "**/model/**"
+}
+
+
+tasks.withType(Checkstyle).each { checkstyleTask ->
+    checkstyleTask.doLast {
+        reports.all { report ->
+            def outputFile = report.destination
+            if (outputFile.exists() && outputFile.text.contains("<error ")) {
+                //throw new GradleException("There were checkstyle warnings! For more info check $outputFile")
+            }
+        }
+    }
+}
+
+sonarqube {
+    properties {
+        property "sonar.buildbreaker.skip", "false"
+        property "sonar.exclusions","**/config/**,**/demo/**,**/model/**"
+        property "sonar.coverage.exclusions", "**/config/**,**/demo/**,**/model/**"
+    }
+}
+
+jacoco {
+    reportsDir = file("${buildDir}/reports/jacoco/")
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        csv.enabled false
+        html.destination file("${buildDir}/reports/jacoco")
+    }
+}
+
+test {
+	systemProperty "file.encoding", "UTF-8"
+	useJUnitPlatform()
+}

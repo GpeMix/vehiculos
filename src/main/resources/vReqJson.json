@@ -1,0 +1,9 @@
+{
+   "Fecha":"2021-02-08",
+   "IdParticipante":"3456",
+   "Vehiculo":{
+      "Tipo":"AUT",
+      "Armadora":"VW",
+      "Carroceria":"12"
+   }
+}
